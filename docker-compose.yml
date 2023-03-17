@@ -1,0 +1,71 @@
+version: '3.8'
+services:
+  mongo:
+    image: bitnami/mongodb:4.4
+    restart: always
+    ports:
+      - 27017:27017
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGODB_ROOT_PASSWORD=example
+      - MONGODB_USERNAME=paotharit
+      - MONGODB_PASSWORD=p123456
+      - MONGODB_DATABASE=borrowdb
+      # - MONGODB_ADVERTISED_HOSTNAME=127.0.0.1
+      - MONGODB_REPLICA_SET_MODE=primary
+      - MONGODB_REPLICA_SET_KEY=replicasetkey123
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/borrowdb --quiet
+      interval: 10s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+
+  postgres:
+    image: postgres:10.3
+    restart: always
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready", "-d", "db_prod"]
+      interval: 10s
+      timeout: 60s
+      retries: 5
+
+  api_postgres:
+    build:
+      dockerfile: Dockerfile
+      context: ./backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - .env
+    ports:
+      - 3001:3000
+
+  api_mongo:
+    build:
+      dockerfile: Dockerfile
+      context: ./backend_mongo
+    depends_on:
+      mongo:
+        condition: service_healthy
+    env_file:
+      - .env_mongo
+    ports:
+      - 3002:3000
+
+  nginx:
+    depends_on:
+      - api_mongo
+      - api_postgres
+    restart: always
+    build:
+      dockerfile: Dockerfile
+      context: ./nginx
+    ports:
+      - "3050:80"
+

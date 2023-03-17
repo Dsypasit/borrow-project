@@ -1,3 +1,7 @@
 [submodule "backend"]
     path = backend
     url = https://github.com/Dsypasit/borrow-project-backend.git
+
+[submodule "backend_mongo"]
+    path = backend_mongo
+    url = https://github.com/Dsypasit/borrow-project-backend.git
